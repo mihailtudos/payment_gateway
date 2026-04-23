@@ -1,3 +1,5 @@
+# Mermaid script
+
 ```mermaid
 sequenceDiagram
     participant M as Merchant

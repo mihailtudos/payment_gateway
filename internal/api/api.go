@@ -89,5 +89,4 @@ func (a *API) setupRouter() {
 		r.Get("/payments/{id}", a.GetPaymentHandler())
 		r.Post("/payments", a.PostPaymentHandler())
 	})
-
 }

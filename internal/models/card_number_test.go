@@ -14,10 +14,10 @@ func TestCardNumber_LastFour(t *testing.T) {
 		want string
 	}{
 		{"2222405343248871", "8871"},
-		{"12345678901234", "1234"},   // 14-digit minimum
+		{"12345678901234", "1234"},      // 14-digit minimum
 		{"1234567890123456789", "6789"}, // 19-digit maximum
-		{"1234", "1234"},             // exactly 4 digits
-		{"123", "123"},              // shorter than 4 — return as-is
+		{"1234", "1234"},                // exactly 4 digits
+		{"123", "123"},                  // shorter than 4 — return as-is
 	}
 
 	for _, tt := range tests {

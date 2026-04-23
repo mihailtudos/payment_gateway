@@ -59,8 +59,8 @@ func (h *PaymentsHandler) GetHandler() http.HandlerFunc {
 		if err != nil || pID == uuid.Nil {
 			span.RecordError(err)
 			span.SetStatus(codes.Error, "invalid payment id")
-			log.WarnContext(ctx, 
-				"invalid payment id", 
+			log.WarnContext(ctx,
+				"invalid payment id",
 				slog.String("payment_id", id),
 			)
 			h.getCounter.Add(ctx, 1, metric.WithAttributes(attribute.String("outcome", "invalid_id")))
@@ -74,19 +74,19 @@ func (h *PaymentsHandler) GetHandler() http.HandlerFunc {
 
 		if payment != nil {
 			span.SetAttributes(
-				attribute.String("payment.status", 
-				string(payment.PaymentStatus)),
+				attribute.String("payment.status",
+					string(payment.PaymentStatus)),
 			)
-			log.InfoContext(ctx, 
-				"payment found", 
-				slog.String("payment_id", id), 
+			log.InfoContext(ctx,
+				"payment found",
+				slog.String("payment_id", id),
 				slog.String("status", string(payment.PaymentStatus)),
 			)
 			h.getCounter.Add(ctx, 1, metric.WithAttributes(attribute.String("outcome", "found")))
 			httputil.OK(w, payment)
 		} else {
-			log.InfoContext(ctx, 
-				"payment not found", 
+			log.InfoContext(ctx,
+				"payment not found",
 				slog.String("payment_id", id),
 			)
 			h.getCounter.Add(ctx, 1, metric.WithAttributes(attribute.String("outcome", "not_found")))
