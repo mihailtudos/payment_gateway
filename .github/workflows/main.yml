@@ -1,0 +1,20 @@
+---
+name: "Main"
+# yamllint disable-line rule:truthy
+on:
+  push:
+    branches:
+      - "main"
+
+permissions: {}
+
+jobs:
+  tests:
+    uses: "./.github/workflows/test.yml"
+    permissions:
+      contents: "read"
+
+  integration-tests:
+    uses: "./.github/workflows/integration-test.yml"
+    permissions:
+      contents: "read"

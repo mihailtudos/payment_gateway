@@ -1,0 +1,15 @@
+name: "PR"
+# yamllint disable-line rule:truthy
+on:
+  pull_request:
+    branches:
+      - "*"
+
+permissions: {}
+
+jobs:
+  tests:
+    uses: "./.github/workflows/test.yml"
+    permissions:
+      pull-requests: "read"
+      contents: "read"

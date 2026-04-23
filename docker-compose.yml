@@ -1,0 +1,44 @@
+services:
+  payment_gateway:
+    container_name: "payment_gateway"
+    build:
+      context: "."
+      dockerfile: "Dockerfile"
+      args:
+        VERSION: "1.0.0"
+        COMMIT_HASH: "local-dev"
+        BUILD_DATE: "2026-04-21T22:00:00Z"
+    ports:
+      - "8090:8090"
+    environment:
+      - "ACQUIRING_BANK_URL=http://bank_simulator:8080"
+      - "OTEL_EXPORTER_OTLP_ENDPOINT=otel:4317"
+    depends_on:
+      - "bank_simulator"
+      - "otel"
+  bank_simulator:
+    container_name: "bank_simulator"
+    image: "bbyars/mountebank:2.8.1"
+    ports:
+      - "2525:2525"
+      - "8080:8080"
+    command: "--configfile /imposters/bank_simulator.ejs --allowInjection"
+    volumes:
+      - type: "bind"
+        source: "./imposters"
+        target: "/imposters"
+  otel:
+    container_name: "otel"
+    image: "grafana/otel-lgtm:latest"
+    environment:
+      - "GF_SECURITY_ADMIN_USER=admin"
+      - "GF_SECURITY_ADMIN_PASSWORD=admin"
+    ports:
+      - "4317:4317"   # OTLP gRPC
+      - "4318:4318"   # OTLP HTTP
+      - "3000:3000"   # Grafana UI
+    volumes:
+      - "grafana_data:/var/lib/grafana"
+
+volumes:
+  grafana_data:

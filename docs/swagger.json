@@ -1,0 +1,328 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Interview challenge for building a Payment Gateway - Go version",
+        "title": "Payment Gateway Challenge Go",
+        "contact": {}
+    },
+    "host": "localhost:8090",
+    "basePath": "/",
+    "paths": {
+        "/api/payments": {
+            "post": {
+                "description": "Validates the request, forwards to the acquiring bank, stores the result, and returns it.\nThree outcomes are possible:\n- **Authorized (201)** — bank approved; payment stored and returned.\n- **Declined (402)**   — bank declined; payment still stored and returned with decline error.\n- **Rejected (422)**   — validation failed; bank never called, nothing stored.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Process a payment",
+                "parameters": [
+                    {
+                        "description": "Payment request body",
+                        "name": "payment",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.PostPaymentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Payment authorized",
+                        "schema": {
+                            "$ref": "#/definitions/api.PaymentResponseEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Malformed request body",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponseEnvelope"
+                        }
+                    },
+                    "402": {
+                        "description": "Payment declined — record saved, ID returned",
+                        "schema": {
+                            "$ref": "#/definitions/api.DeclinedPaymentResponseEnvelope"
+                        }
+                    },
+                    "422": {
+                        "description": "Validation failed",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponseEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponseEnvelope"
+                        }
+                    },
+                    "503": {
+                        "description": "Acquiring bank unavailable",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponseEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/payments/{id}": {
+            "get": {
+                "description": "Returns the stored details of a previously processed payment (authorized or declined).",
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Retrieve a payment by ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Payment UUID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Payment found",
+                        "schema": {
+                            "$ref": "#/definitions/api.PaymentResponseEnvelope"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid UUID",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponseEnvelope"
+                        }
+                    },
+                    "404": {
+                        "description": "Payment not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponseEnvelope"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/api.ErrorResponseEnvelope"
+                        }
+                    }
+                }
+            }
+        },
+        "/ping": {
+            "get": {
+                "produces": [
+                    "application/json"
+                ],
+                "summary": "Health check endpoint Ping-Pong",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.Pong"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.DeclinedPaymentResponseEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.PaymentResponse"
+                },
+                "error": {
+                    "$ref": "#/definitions/httputil.APIError"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.ErrorResponseEnvelope": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/httputil.APIError"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.PaymentResponseEnvelope": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/models.PaymentResponse"
+                },
+                "success": {
+                    "type": "boolean"
+                },
+                "timestamp": {
+                    "type": "string"
+                }
+            }
+        },
+        "httputil.APIError": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/httputil.ValidationDetail"
+                    }
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "httputil.ValidationDetail": {
+            "type": "object",
+            "properties": {
+                "field": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.PaymentResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "example": 100
+                },
+                "card_number_last_four": {
+                    "type": "string",
+                    "example": "8877"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "GBP"
+                },
+                "expiry_month": {
+                    "type": "integer",
+                    "example": 4
+                },
+                "expiry_year": {
+                    "type": "integer",
+                    "example": 2025
+                },
+                "id": {
+                    "type": "string",
+                    "example": "550e8400-e29b-41d4-a716-446655440000"
+                },
+                "payment_status": {
+                    "enum": [
+                        "Authorized",
+                        "Declined"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/models.PaymentStatus"
+                        }
+                    ],
+                    "example": "Authorized"
+                }
+            }
+        },
+        "models.PaymentStatus": {
+            "type": "string",
+            "enum": [
+                "Authorized",
+                "Declined",
+                "Rejected",
+                ""
+            ],
+            "x-enum-varnames": [
+                "Authorized",
+                "Declined",
+                "Rejected",
+                "NoStatus"
+            ]
+        },
+        "models.Pong": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.PostPaymentRequest": {
+            "type": "object",
+            "required": [
+                "amount",
+                "card_number",
+                "currency",
+                "cvv",
+                "expiry_month",
+                "expiry_year"
+            ],
+            "properties": {
+                "amount": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 100
+                },
+                "card_number": {
+                    "type": "string",
+                    "maxLength": 19,
+                    "minLength": 14,
+                    "example": "2222405343248871"
+                },
+                "currency": {
+                    "type": "string",
+                    "enum": [
+                        "USD",
+                        "GBP",
+                        "EUR"
+                    ],
+                    "example": "GBP"
+                },
+                "cvv": {
+                    "type": "string",
+                    "maxLength": 4,
+                    "minLength": 3,
+                    "example": "123"
+                },
+                "expiry_month": {
+                    "type": "integer",
+                    "maximum": 12,
+                    "minimum": 1,
+                    "example": 4
+                },
+                "expiry_year": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 2026
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "BasicAuth": {
+            "type": "basic"
+        }
+    }
+}

@@ -1,0 +1,106 @@
+# yaml-language-server: $schema=https://taskfile.dev/schema.json
+
+version: "3"
+
+vars:
+  GREETING: "Hello, world!"
+
+tasks:
+  run:
+    desc: "Runs Payment Gateway service"
+    cmds:
+      - "BANK_URL=http://localhost:8080 go run ./cmd/api/main.go"
+    silent: true
+
+  build:
+    desc: "Builds the Payment Gateway"
+    cmd: |
+      go build -ldflags "\
+        -X main.version=1.0.0 \
+        -X main.commit=$(git rev-parse HEAD) \
+        -X main.date=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+  docker-up:
+    desc: "Starts the full local environment"
+    cmds:
+      - "docker compose up -d --build"
+
+  docker-down:
+    desc: "Stops the full local environment"
+    cmds:
+      - "docker compose down"
+
+  docker-pw-build:
+    desc: "Builds Docker Payment Gateway image"
+    cmds:
+      - |
+        docker build \
+          --build-arg VERSION=1.0.0 \
+          --build-arg COMMIT_HASH=$(git rev-parse HEAD) \
+          --build-arg BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ") \
+          -t pgw:latest .
+
+  docker-pw-run:
+    desc: "Runs Docker Payment Gateway container"
+    cmds:
+      - |
+        docker run -d --rm \
+          --name payment-gateway \
+          -p 8090:8090 \
+          pgw:latest -d
+
+  gen:
+    desc: "Runs generate command gloabbly"
+    cmds:
+      - "go generate ./..."
+
+  lint:
+    desc: "Runs all linters"
+    deps: [ "lint-md", "lint-yaml", "lint-goci", "tidy" ]
+
+  lint-goci:
+    desc: "Run golangci-lint"
+    preconditions:
+      - sh: "command -v golangci-lint"
+        msg: "golangci-lint is not installed. Install it with 'brew install
+          golangci-lint'."
+    cmds:
+      - "golangci-lint run ./..."
+
+  lint-md:
+    desc: "Runs markdown linter"
+    cmds:
+      - "npx markdownlint-cli --config .markdownlint.yml ."
+
+  lint-yaml:
+    desc: "Runs yamllint"
+    preconditions:
+      - sh: "command -v yamllint"
+        msg: "yamllint is not installed. Install it with 'brew install yamllint'."
+    cmds:
+      - "yamllint -c .yamllint ."
+
+  tidy:
+    desc: "Synchronizes the dependency list"
+    cmds:
+      - "go mod tidy"
+
+  vet:
+    desc: "Runs go vet to catch common mistakes"
+    cmds:
+      - "go fmt ./..."
+      - "go vet ./..."
+
+  test:
+    desc: "Runs go test"
+    cmds:
+      - "go test ./... --count=1"
+
+  test-integration:
+    desc: "Runs go integration test"
+    cmds:
+      - "go test -tags integration ./tests/integration/... -v"
+
+  test-all:
+    desc: "Runs both unit and integration test"
+    deps: [ "test", "test-integration" ]

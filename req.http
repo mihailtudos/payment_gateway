@@ -1,0 +1,28 @@
+@base=http://localhost
+POST {{base}}:8080/payments
+Content-Type: application/json
+
+{
+  "card_number": "2222405343248871",
+  "expiry_date": "04/2025",
+  "currency": "GBP",
+  "amount": 100,
+  "cvv": "123"
+}
+
+### Create payment request with valid body
+POST {{base}}:8090/api/payments
+Content-Type: application/json
+
+{
+  "card_number":"2222405343248870",
+  "expiry_month": 12,
+  "expiry_year": 2026,
+  "currency": "GBP",
+  "amount": 100,
+  "cvv": "123"
+}
+
+### Get payment by ID
+GET {{base}}:8090/api/payments/8384a91a-7b61-42b5-91e5-2d5dd134a7e2
+Content-Type: application/json

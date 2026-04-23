@@ -1,0 +1,81 @@
+name: "Test"
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+
+env:
+  GO_VERSION_PATH: "./.go-version"
+
+jobs:
+  lint:
+    name: "Go CI lint & Go gen"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd"
+      - uses: "actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c"
+        with:
+          go-version-file: "${{ env.GO_VERSION_PATH }}"
+          cache: true
+      - uses: "golangci/golangci-lint-action@1e7e51e771db61008b38414a730f564565cf7c20"
+        with:
+          version: "latest"
+      - name: "Verify Swagger docs"
+        uses: "chainguard-dev/actions/nodiff@3caedd3784c809ba873cbb8c6a12e2bc6bf6ab09"
+        with:
+          fixup-command: "go generate ./docs/..."
+      - name: "Verify Uber mocks"
+        uses: "chainguard-dev/actions/nodiff@3caedd3784c809ba873cbb8c6a12e2bc6bf6ab09"
+        with:
+          fixup-command: "go generate ./internal/adapters/..."
+
+  other-lint:
+    name: "Lint Yaml & Markdown Test"
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: "read"
+    steps:
+      - uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd"
+      - uses: "ibiqlik/action-yamllint@81e214fd484713882ce4237cb7cd264d550856cf"
+        with:
+          file_or_dir: "."
+          config_file: "./.yamllint"
+      - uses: "avto-dev/markdown-lint@04d43ee9191307b50935a753da3b775ab695eceb"
+        with:
+          config: "./markdownlint.yml"
+          args: ""
+
+  test-cli:
+    name: "GO tests"
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: "read"
+    steps:
+      - uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd"
+        with:
+          fetch-depth: 0
+      - uses: "actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c"
+        with:
+          go-version-file: "${{ env.GO_VERSION_PATH }}"
+          cache: true
+      - name: "Run Go Mod Download"
+        shell: "bash"
+        run: "go mod download"
+        working-directory: "."
+      - name: "Go Mod test"
+        shell: "bash"
+        working-directory: "."
+        run: "go mod tidy"
+      - name: "Verify Go Mod Tidy"
+        uses: "chainguard-dev/actions/nodiff@3caedd3784c809ba873cbb8c6a12e2bc6bf6ab09"
+        with:
+          fixup-command: "go mod tidy"
+      - name: "Install govulncheck"
+        shell: "bash"
+        working-directory: "."
+        run: "go install golang.org/x/vuln/cmd/govulncheck@latest"
+      - name: "Run govulncheck"
+        shell: "bash"
+        working-directory: "."
+        run: "govulncheck ./..."
+      - name: "Go unit test"
+        run: "go test ./..."

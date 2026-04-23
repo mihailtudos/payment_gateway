@@ -1,0 +1,230 @@
+basePath: /
+definitions:
+  api.DeclinedPaymentResponseEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/models.PaymentResponse'
+      error:
+        $ref: '#/definitions/httputil.APIError'
+      success:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  api.ErrorResponseEnvelope:
+    properties:
+      error:
+        $ref: '#/definitions/httputil.APIError'
+      success:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  api.PaymentResponseEnvelope:
+    properties:
+      data:
+        $ref: '#/definitions/models.PaymentResponse'
+      success:
+        type: boolean
+      timestamp:
+        type: string
+    type: object
+  httputil.APIError:
+    properties:
+      code:
+        type: string
+      details:
+        items:
+          $ref: '#/definitions/httputil.ValidationDetail'
+        type: array
+      message:
+        type: string
+    type: object
+  httputil.ValidationDetail:
+    properties:
+      field:
+        type: string
+      message:
+        type: string
+    type: object
+  models.PaymentResponse:
+    properties:
+      amount:
+        example: 100
+        type: integer
+      card_number_last_four:
+        example: "8877"
+        type: string
+      currency:
+        example: GBP
+        type: string
+      expiry_month:
+        example: 4
+        type: integer
+      expiry_year:
+        example: 2025
+        type: integer
+      id:
+        example: 550e8400-e29b-41d4-a716-446655440000
+        type: string
+      payment_status:
+        allOf:
+        - $ref: '#/definitions/models.PaymentStatus'
+        enum:
+        - Authorized
+        - Declined
+        example: Authorized
+    type: object
+  models.PaymentStatus:
+    enum:
+    - Authorized
+    - Declined
+    - Rejected
+    - ""
+    type: string
+    x-enum-varnames:
+    - Authorized
+    - Declined
+    - Rejected
+    - NoStatus
+  models.Pong:
+    properties:
+      message:
+        type: string
+    type: object
+  models.PostPaymentRequest:
+    properties:
+      amount:
+        example: 100
+        minimum: 1
+        type: integer
+      card_number:
+        example: "2222405343248871"
+        maxLength: 19
+        minLength: 14
+        type: string
+      currency:
+        enum:
+        - USD
+        - GBP
+        - EUR
+        example: GBP
+        type: string
+      cvv:
+        example: "123"
+        maxLength: 4
+        minLength: 3
+        type: string
+      expiry_month:
+        example: 4
+        maximum: 12
+        minimum: 1
+        type: integer
+      expiry_year:
+        example: 2026
+        minimum: 1
+        type: integer
+    required:
+    - amount
+    - card_number
+    - currency
+    - cvv
+    - expiry_month
+    - expiry_year
+    type: object
+host: localhost:8090
+info:
+  contact: {}
+  description: Interview challenge for building a Payment Gateway - Go version
+  title: Payment Gateway Challenge Go
+paths:
+  /api/payments:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Validates the request, forwards to the acquiring bank, stores the result, and returns it.
+        Three outcomes are possible:
+        - **Authorized (201)** — bank approved; payment stored and returned.
+        - **Declined (402)**   — bank declined; payment still stored and returned with decline error.
+        - **Rejected (422)**   — validation failed; bank never called, nothing stored.
+      parameters:
+      - description: Payment request body
+        in: body
+        name: payment
+        required: true
+        schema:
+          $ref: '#/definitions/models.PostPaymentRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Payment authorized
+          schema:
+            $ref: '#/definitions/api.PaymentResponseEnvelope'
+        "400":
+          description: Malformed request body
+          schema:
+            $ref: '#/definitions/api.ErrorResponseEnvelope'
+        "402":
+          description: Payment declined — record saved, ID returned
+          schema:
+            $ref: '#/definitions/api.DeclinedPaymentResponseEnvelope'
+        "422":
+          description: Validation failed
+          schema:
+            $ref: '#/definitions/api.ErrorResponseEnvelope'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ErrorResponseEnvelope'
+        "503":
+          description: Acquiring bank unavailable
+          schema:
+            $ref: '#/definitions/api.ErrorResponseEnvelope'
+      summary: Process a payment
+  /api/payments/{id}:
+    get:
+      description: Returns the stored details of a previously processed payment (authorized
+        or declined).
+      parameters:
+      - description: Payment UUID
+        format: uuid
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Payment found
+          schema:
+            $ref: '#/definitions/api.PaymentResponseEnvelope'
+        "400":
+          description: Invalid UUID
+          schema:
+            $ref: '#/definitions/api.ErrorResponseEnvelope'
+        "404":
+          description: Payment not found
+          schema:
+            $ref: '#/definitions/api.ErrorResponseEnvelope'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ErrorResponseEnvelope'
+      summary: Retrieve a payment by ID
+  /ping:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.Pong'
+      summary: Health check endpoint Ping-Pong
+securityDefinitions:
+  BasicAuth:
+    type: basic
+swagger: "2.0"

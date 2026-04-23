@@ -1,0 +1,17 @@
+---
+yaml-files:
+  - "*.yaml"
+  - "*.yml"
+  - ".yamllint"
+extends: "default"
+rules:
+  document-start: "disable"
+  quoted-strings:
+    required: true
+    quote-type: "double"
+  line-length: "disable"
+  brackets:
+    min-spaces-inside: 1
+    max-spaces-inside: 1
+ignore:
+  - "/docs/swagger.yaml"
