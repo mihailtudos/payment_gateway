@@ -20,11 +20,11 @@ jobs:
         with:
           version: "latest"
       - name: "Verify Swagger docs"
-        uses: "chainguard-dev/actions/nodiff@3caedd3784c809ba873cbb8c6a12e2bc6bf6ab09"
+        uses: "chainguard-dev/actions/nodiff@061bc0e921116bde1470f51fb5c86d5318f16558"
         with:
           fixup-command: "go generate ./docs/..."
       - name: "Verify Uber mocks"
-        uses: "chainguard-dev/actions/nodiff@3caedd3784c809ba873cbb8c6a12e2bc6bf6ab09"
+        uses: "chainguard-dev/actions/nodiff@061bc0e921116bde1470f51fb5c86d5318f16558"
         with:
           fixup-command: "go generate ./internal/adapters/..."
 
@@ -35,7 +35,7 @@ jobs:
       contents: "read"
     steps:
       - uses: "actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd"
-      - uses: "ibiqlik/action-yamllint@81e214fd484713882ce4237cb7cd264d550856cf"
+      - uses: "ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c"
         with:
           file_or_dir: "."
           config_file: "./.yamllint"
@@ -66,7 +66,7 @@ jobs:
         working-directory: "."
         run: "go mod tidy"
       - name: "Verify Go Mod Tidy"
-        uses: "chainguard-dev/actions/nodiff@3caedd3784c809ba873cbb8c6a12e2bc6bf6ab09"
+        uses: "chainguard-dev/actions/nodiff@061bc0e921116bde1470f51fb5c86d5318f16558"
         with:
           fixup-command: "go mod tidy"
       - name: "Install govulncheck"
